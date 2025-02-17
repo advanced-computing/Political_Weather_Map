@@ -4,7 +4,7 @@ import plotly.express as px
 from pycountry import countries
 
 # Load Data
-path_article = r'C:\Users\oiwah\OneDrive\デスクトップ\2025_Spring_Python\project\Political_Weather_Map\gdelt_20230204stre.csv'
+path_article = r'C:\Users\oiwah\OneDrive\デスクトップ\2025_Spring_Python\project\Political_Weather_Map\gdelt_20230204.csv'
 path_img = r'C:\Users\oiwah\OneDrive\デスクトップ\2025_Spring_Python\project\Political_Weather_Map\immigratation.csv'
 
 df_article = pd.read_csv(path_article)
@@ -43,15 +43,19 @@ imgs = df_img.melt(id_vars=['Country Code'], var_name='Year', value_name='Immigr
 imgs['Year'] = pd.to_datetime(imgs['Year'], format='%Y')
 
 # Add Alpha3Code to imgs DataFrame
-imgs['Alpha3Code'] = imgs['Country Code']
+imgs['Alpha3Code'] = imgs['Country Code'].copy()
 
 # Select Data
-date_input = st.date_input("Select a Date", value=pd.to_datetime('2023-02-17'))
-date_str = date_input.strftime('%Y')
+date_input = st.date_input("Select a Date", value=pd.to_datetime('2023-02-04'))
 
-articles_date = articles[articles['DateTime'].str.startswith(date_str)]
+# Convert articles' DateTime column to datetime
+articles['DateTime'] = pd.to_datetime(articles['DateTime'])
+articles_date = articles[articles['DateTime'].dt.date == date_input]
+
 articles_country = articles_date.groupby('CountryCode')['DateTime'].count().reset_index(name='Count')
 articles_country['Alpha3Code'] = articles_country['CountryCode'].apply(convert_to_alpha3)
+articles_tone = articles_date.groupby('CountryCode')['DocTone'].mean().reset_index(name='Tone')
+articles_tone['Alpha3Code'] = articles_tone['CountryCode'].apply(convert_to_alpha3)
 
 imgs_date = imgs[imgs['Year'].dt.year == date_input.year]
 imgs_country = imgs_date.groupby('Alpha3Code')['Immigrants'].sum().reset_index(name='Count')
@@ -60,6 +64,10 @@ imgs_country = imgs_date.groupby('Alpha3Code')['Immigrants'].sum().reset_index(n
 fig_articles = px.choropleth(articles_country, locations='Alpha3Code', color='Count', hover_name='CountryCode', color_continuous_scale="Viridis")
 fig_articles.update_geos(showcoastlines=True, coastlinecolor="Black", showland=True, landcolor="white")
 fig_articles.update_layout(title="Global Political News Heatmap by Country", geo=dict(showframe=False, showcoastlines=True))
+
+fig_tones = px.choropleth(articles_tone, locations='Alpha3Code', color='Tone', hover_name='CountryCode', color_continuous_scale="Viridis")
+fig_tones.update_geos(showcoastlines=True, coastlinecolor="Black", showland=True, landcolor="white")
+fig_tones.update_layout(title="Tone toward Immigrants by Country", geo=dict(showframe=False, showcoastlines=True))
 
 fig_imgs = px.choropleth(imgs_country, locations='Alpha3Code', color='Count', hover_name='Alpha3Code', color_continuous_scale="Viridis")
 fig_imgs.update_geos(showcoastlines=True, coastlinecolor="Black", showland=True, landcolor="white")
@@ -70,4 +78,5 @@ st.title('Global Political News Heatmap')
 st.write('Articles Data Sample', articles.sample(5))
 st.write('Imgs Data Sample', imgs.sample(5))
 st.plotly_chart(fig_articles)
+st.plotly_chart(fig_tones)
 st.plotly_chart(fig_imgs)
