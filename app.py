@@ -2,13 +2,19 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from pycountry import countries
+import os
+
+st.title('Global Political News Heatmap')
+st.write('Team: Charlotte Bacchetta, Samuel Bennett, Hiroyuki Oiwa')
 
 # Load Data
-path_article = r'C:\Users\oiwah\OneDrive\デスクトップ\2025_Spring_Python\project\Political_Weather_Map\gdelt_20230204.csv'
-path_img = r'C:\Users\oiwah\OneDrive\デスクトップ\2025_Spring_Python\project\Political_Weather_Map\immigratation.csv'
+path_article = os.path.join(os.path.dirname(__file__), 'gdelt_20230204.csv')
+path_img = os.path.join(os.path.dirname(__file__), 'immigratation.csv')
+path_pop = os.path.join(os.path.dirname(__file__), 'population.csv')
 
 df_article = pd.read_csv(path_article)
 df_img = pd.read_csv(path_img)
+df_pop = pd.read_csv(path_pop)
 
 articles = pd.DataFrame()
 articles['DateTime'] = df_article['DateTime']
@@ -20,13 +26,54 @@ articles['URL'] = df_article['URL']
 
 # Clean Articles Data
 country_code_mapping = {
-    'EI': 'IE',
-    'EZ': 'ES',
-    'IZ': 'IT',
-    'HA': 'HR',
-    'LO': 'LI',
-    'OS': 'AT',
+    'ZI': 'ZW',  # Zimbabwe
+    'IZ': 'IQ',  # Iraq
+    'LA': 'LV',  # Latvia
+    'MU': 'MR',  # Mauritania
+    'JA': 'JP',  # Japan
+    'LY': 'LB',  # Lebanon
+    'MC': 'ME',  # Montenegro
+    'BR': 'BG',  # Bulgaria
+    'BX': 'BE',  # Belgium
+    'GR': 'DE',  # Germany
+    'GV': 'GN',  # Guinea
+    'KU': 'KW',  # Kuwait
+    'LG': 'LV',  # Latvia
+    'MI': 'MK',  # North Macedonia
+    'RI': 'RS',  # Serbia
+    'DA': 'DK',  # Denmark
+    'EN': 'EE',  # Estonia
+    'EI': 'IE',  # Ireland
+    'LE': 'LB',  # Lebanon
+    'LO': 'LI',  # Liechtenstein
+    'PO': 'PT',  # Portugal
+    'LH': 'LT',  # Lithuania
+    'NU': 'NR',  # Nauru
+    'CE': 'CF',  # Central African Republic
+    'AY': 'AI',  # Anguilla
+    'AJ': 'AZ',  # Azerbaijan
+    'CS': 'CZ',  # Czech Republic
+    'RP': 'PH',  # Philippines
+    'RQ': 'PR',  # Puerto Rico
+    'KS': 'XK',  # Kosovo
+    'OD': 'OM',  # Oman
+    'BF': 'BG',  # Bulgaria
+    'PP': 'PW',  # Palau
+    'DR': 'DO',  # Dominican Republic
+    'AC': 'AQ',  # Antarctica
+    'OC': 'AU',  # Australia
+    'OS': 'AT',  # Austria
+    'RS': 'RU',  # Russia
+    'RB': 'RO',  # Romania
+    'PU': 'PT',  # Portugal
+    'CG': 'CG',  # Congo
+    'IV': 'CI',  # Côte d'Ivoire
+    'CJ': 'CY',  # Cyprus
+    'MP': 'FM',  # Micronesia
+    'MB': 'MT',  # Malta
+    'HA': 'HR',  # Croatia
 }
+
 
 articles['CountryCode'] = articles['CountryCode'].replace(country_code_mapping)
 
@@ -42,11 +89,20 @@ articles['Alpha3Code'] = articles['CountryCode'].apply(convert_to_alpha3)
 imgs = df_img.melt(id_vars=['Country Code'], var_name='Year', value_name='Immigrants')
 imgs['Year'] = pd.to_datetime(imgs['Year'], format='%Y')
 
+# Clean Population Data
+pops = df_pop.melt(id_vars=['Country Code'], var_name='Year', value_name='Populations')
+pops['Year'] = pd.to_datetime(pops['Year'], format='%Y')
+
+# Merge Data
+imgs_pops = pd.merge(imgs, pops, on=['Country Code', 'Year'])
+imgs_pops['Rate(%)'] = imgs_pops['Immigrants']/imgs_pops['Populations']*100
+
 # Add Alpha3Code to imgs DataFrame
-imgs['Alpha3Code'] = imgs['Country Code'].copy()
+imgs_pops['Alpha3Code'] = imgs_pops['Country Code']
 
 # Select Data
 date_input = st.date_input("Select a Date", value=pd.to_datetime('2023-02-04'))
+articles = articles[articles['ContextualText'].str.contains('immigra', case=False, na=False)]
 
 # Convert articles' DateTime column to datetime
 articles['DateTime'] = pd.to_datetime(articles['DateTime'])
@@ -57,8 +113,7 @@ articles_country['Alpha3Code'] = articles_country['CountryCode'].apply(convert_t
 articles_tone = articles_date.groupby('CountryCode')['DocTone'].mean().reset_index(name='Tone')
 articles_tone['Alpha3Code'] = articles_tone['CountryCode'].apply(convert_to_alpha3)
 
-imgs_date = imgs[imgs['Year'].dt.year == date_input.year]
-imgs_country = imgs_date.groupby('Alpha3Code')['Immigrants'].sum().reset_index(name='Count')
+imgs_date = imgs_pops[imgs_pops['Year'].dt.year == date_input.year]
 
 # Illustrate figure
 fig_articles = px.choropleth(articles_country, locations='Alpha3Code', color='Count', hover_name='CountryCode', color_continuous_scale="Viridis")
@@ -69,14 +124,13 @@ fig_tones = px.choropleth(articles_tone, locations='Alpha3Code', color='Tone', h
 fig_tones.update_geos(showcoastlines=True, coastlinecolor="Black", showland=True, landcolor="white")
 fig_tones.update_layout(title="Tone toward Immigrants by Country", geo=dict(showframe=False, showcoastlines=True))
 
-fig_imgs = px.choropleth(imgs_country, locations='Alpha3Code', color='Count', hover_name='Alpha3Code', color_continuous_scale="Viridis")
+fig_imgs = px.choropleth(imgs_date, locations='Alpha3Code', color='Rate(%)', hover_name='Alpha3Code', color_continuous_scale="Viridis")
 fig_imgs.update_geos(showcoastlines=True, coastlinecolor="Black", showland=True, landcolor="white")
 fig_imgs.update_layout(title="Global Immigrants Heatmap by Country", geo=dict(showframe=False, showcoastlines=True))
 
 # Streamlit
-st.title('Global Political News Heatmap')
 st.write('Articles Data Sample', articles.sample(5))
-st.write('Imgs Data Sample', imgs.sample(5))
+st.write('Imgs Data Sample', imgs_pops.sample(5))
 st.plotly_chart(fig_articles)
 st.plotly_chart(fig_tones)
 st.plotly_chart(fig_imgs)

@@ -2,4 +2,3 @@ pandas
 jupyter==1.*
 plotly
 google-cloud-bigquery
-pycountry
