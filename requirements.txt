@@ -1,4 +1,5 @@
 pandas
 jupyter==1.*
 plotly
-numpy
+google-cloud-bigquery
+pycountry
