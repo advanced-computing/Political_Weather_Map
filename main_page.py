@@ -6,6 +6,8 @@ import os
 
 st.title('Political Weather Map by Country')
 st.write('Team: Charlotte Bacchetta, Samuel Bennett, Hiroyuki Oiwa')
+st.write("This project aims to assess how much a country's immmigration rates are associated with its "
+        "tone towards immigrants in news articles")
 
 # Load Data
 path_article = os.path.join(os.path.dirname(__file__), 'gdelt_20230204.csv')
@@ -110,6 +112,8 @@ imgs_pops['Alpha3Code'] = imgs_pops['Country Code']
 
 # Select Data
 date_input = st.date_input('Select a Date', value=pd.to_datetime('2023-02-04'))
+st.write('We currently only have data for one date, 2023/02/04. We will include all the dates in a later '
+         'phase of the project')
 articles = articles[
     articles['ContextualText'].str.contains('immigra', case=False, na=False)
     ]
@@ -214,5 +218,8 @@ fig_scts.update_traces(textposition='top center')
        
 # Streamlit
 st.write('Articles Data Sample', articles.sample(5))
+st.write("Here we have a sample of 9,970 records of articles on 2023/02/04 "
+         "that contain key word 'immigra'. We will use the DocTone column to assess tone towards "
+         "immigrants. The data comes from GDELT")
 st.plotly_chart(fig_articles)
 st.plotly_chart(fig_tones)
