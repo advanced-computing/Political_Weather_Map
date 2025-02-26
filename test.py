@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from tempo import melt_clean_data, load_data, prepare_articles
+from tempo import melt_clean_data, load_data, select_columns
 
 
 def test_load_data():
@@ -19,8 +19,26 @@ def test_load_data():
     assert load_data(test_file).equals(test_output)
 
 
-def test_prepare_articles():
-    pass
+def test_select_columns():
+    df_input = pd.DataFrame({
+        'DateTime': ['2023-02-04', '2023-02-05'],
+        'CountryCode': ["USA", "JPN"],
+        'Title': ['Dan', 'Amy'],
+        'ContextualText': ['Dan got promoted', 'Amy got fired'],
+        'DocTone': [4.3, -3.3],
+        'URL': ['www.articles', 'www.posts'],
+        'Source': ['WSJ', 'NYT']
+    })
+    df_output = pd.DataFrame({
+        'DateTime': pd.to_datetime(['2023-02-04', '2023-02-05']),
+        'CountryCode': ["USA", "JPN"],
+        'Title': ['Dan', 'Amy'],
+        'ContextualText': ['Dan got promoted', 'Amy got fired'],
+        'DocTone': [4.3, -3.3],
+        'URL': ['www.articles', 'www.posts']
+    })
+
+    assert df_output.equals(select_columns(df_input))
 
 def test_melt_clean_data():
     input_data = {
