@@ -4,7 +4,20 @@ from tempo import melt_clean_data, load_data, prepare_articles
 
 
 def test_load_data():
-    pass
+    test_file = "test_data.csv"
+    test_data = "name,age,city\nAlice,30,New York\nBob,25,San Francisco\nCharlie,35,Los Angeles"
+        
+        # Write the test CSV file
+    with open(test_file, "w") as f:
+        f.write(test_data)
+
+    test_output = pd.DataFrame({
+        "name": ["Alice", "Bob", "Charlie"],
+        "age": [30, 25, 35],
+        "city": ["New York", "San Francisco", "Los Angeles"]
+    })
+    assert load_data(test_file).equals(test_output)
+
 
 def test_prepare_articles():
     pass
