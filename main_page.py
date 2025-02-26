@@ -6,6 +6,11 @@ import plotly.express as px
 from pycountry import countries
 import os
 
+st.title('Political Weather Map by Country')
+st.write('Team: Charlotte Bacchetta, Samuel Bennett, Hiroyuki Oiwa')
+st.write("This project aims to assess how much a country's immmigration rates are associated with its "
+        "tone towards immigrants in news articles")
+
 # Function to load data
 def load_data(file_name):
     path = os.path.join(os.path.dirname(__file__), file_name)
