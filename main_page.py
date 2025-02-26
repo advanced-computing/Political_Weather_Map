@@ -1,225 +1,110 @@
 import streamlit as st
 import pandas as pd
+import requests
+from bs4 import BeautifulSoup
 import plotly.express as px
 from pycountry import countries
 import os
 
-st.title('Political Weather Map by Country')
-st.write('Team: Charlotte Bacchetta, Samuel Bennett, Hiroyuki Oiwa')
-st.write("This project aims to assess how much a country's immmigration rates are associated with its "
-        "tone towards immigrants in news articles")
+# Function to load data
+def load_data(file_name):
+    path = os.path.join(os.path.dirname(__file__), file_name)
+    return pd.read_csv(path)
 
-# Load Data
-path_article = os.path.join(os.path.dirname(__file__), 'gdelt_20230204.csv')
-path_img = os.path.join(os.path.dirname(__file__), 'immigratation.csv')
-path_pop = os.path.join(os.path.dirname(__file__), 'population.csv')
+# Function to select columns
+def select_columns(df_article):
+    articles = pd.DataFrame()
+    articles['DateTime'] = pd.to_datetime(df_article['DateTime'])
+    articles['CountryCode'] = df_article['CountryCode']
+    articles['Title'] = df_article['Title']
+    articles['ContextualText'] = df_article['ContextualText']
+    articles['DocTone'] = df_article['DocTone']
+    articles['URL'] = df_article['URL']
+    return articles
 
-df_article = pd.read_csv(path_article)
-df_img = pd.read_csv(path_img)
-df_pop = pd.read_csv(path_pop)
+# Function to convert original country code to alpha2 codes
+def code_mapping(articles, column):
+    url = 'https://www.geodatasource.com/resources/tutorials/international-country-code-fips-versus-iso-3166/?form=MG0AV3'
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, 'html.parser')
 
-articles = pd.DataFrame()
-articles['DateTime'] = df_article['DateTime']
-articles['CountryCode'] = df_article['CountryCode']
-articles['Title'] = df_article['Title']
-articles['ContextualText'] = df_article['ContextualText']
-articles['DocTone'] = df_article['DocTone']
-articles['URL'] = df_article['URL']
+    fips_to_iso = {}
+    table = soup.find('table')
+    for row in table.find_all('tr')[1:]: 
+        cols = row.find_all('td')
+        fips_code = cols[1].text.strip()
+        iso_code = cols[2].text.strip()
+        fips_to_iso[fips_code] = iso_code 
 
-# Clean Articles Data
-country_code_mapping = {
-    'ZI': 'ZW',  # Zimbabwe
-    'IZ': 'IQ',  # Iraq
-    'LA': 'LV',  # Latvia
-    'MU': 'MR',  # Mauritania
-    'JA': 'JP',  # Japan
-    'LY': 'LB',  # Lebanon
-    'MC': 'ME',  # Montenegro
-    'BR': 'BG',  # Bulgaria
-    'BX': 'BE',  # Belgium
-    'GR': 'DE',  # Germany
-    'GV': 'GN',  # Guinea
-    'KU': 'KW',  # Kuwait
-    'LG': 'LV',  # Latvia
-    'MI': 'MK',  # North Macedonia
-    'RI': 'RS',  # Serbia
-    'DA': 'DK',  # Denmark
-    'EN': 'EE',  # Estonia
-    'EI': 'IE',  # Ireland
-    'LE': 'LB',  # Lebanon
-    'LO': 'LI',  # Liechtenstein
-    'PO': 'PT',  # Portugal
-    'LH': 'LT',  # Lithuania
-    'NU': 'NR',  # Nauru
-    'CE': 'CF',  # Central African Republic
-    'AY': 'AI',  # Anguilla
-    'AJ': 'AZ',  # Azerbaijan
-    'CS': 'CZ',  # Czech Republic
-    'RP': 'PH',  # Philippines
-    'RQ': 'PR',  # Puerto Rico
-    'KS': 'XK',  # Kosovo
-    'OD': 'OM',  # Oman
-    'BF': 'BG',  # Bulgaria
-    'PP': 'PW',  # Palau
-    'DR': 'DO',  # Dominican Republic
-    'AC': 'AQ',  # Antarctica
-    'OC': 'AU',  # Australia
-    'OS': 'AT',  # Austria
-    'RS': 'RU',  # Russia
-    'RB': 'RO',  # Romania
-    'PU': 'PT',  # Portugal
-    'CG': 'CG',  # Congo
-    'IV': 'CI',  # Côte d'Ivoire
-    'CJ': 'CY',  # Cyprus
-    'MP': 'FM',  # Micronesia
-    'MB': 'MT',  # Malta
-    'HA': 'HR',  # Croatia
-}
+    articles[column] = articles[column].replace(fips_to_iso)
+    return articles
 
-
-articles['CountryCode'] = articles['CountryCode'].replace(country_code_mapping)
-
+# Function to convert alpha2 to alpha3 country codes
 def convert_to_alpha3(alpha2_code):
     try:
         return countries.get(alpha_2=alpha2_code).alpha_3
     except AttributeError:
         return None
 
+# Function to melt and clean data
+def melt_clean_data(df, value_name):
+    df_melted = df.melt(id_vars=['Country Code'], var_name='Year', value_name=value_name)
+    df_melted['Year'] = pd.to_datetime(df_melted['Year'], format='%Y')
+    return df_melted
+
+# Functon to plot map
+def plot_choropleth(data, value, title):
+    fig = px.choropleth(data, locations='Alpha3Code', color=value, hover_name='Alpha3Code', color_continuous_scale='Viridis')
+    fig.update_geos(showcoastlines=True, coastlinecolor='Black', showland=True, landcolor='white')
+    fig.update_layout(title=title, geo=dict(showframe=False, showcoastlines=True))
+    return fig
+
+# Load Data
+df_article = load_data('gdelt_20230204.csv')
+df_img = load_data('immigratation.csv')
+df_pop = load_data('population.csv')
+
+# Prepare Data
+articles = select_columns(df_article)
+articles = code_mapping(articles, 'CountryCode')
 articles['Alpha3Code'] = articles['CountryCode'].apply(convert_to_alpha3)
-
-# Clean Immigrants Data
-imgs = df_img.melt(
-    id_vars=['Country Code'], 
-    var_name='Year', 
-    value_name='Immigrants'
-    )
-imgs['Year'] = pd.to_datetime(imgs['Year'], format='%Y')
-
-# Clean Population Data
-pops = df_pop.melt(
-    id_vars=['Country Code'], 
-    var_name='Year', 
-    value_name='Populations'
-    )
-pops['Year'] = pd.to_datetime(pops['Year'], format='%Y')
+imgs = melt_clean_data(df_img, 'Immigrants')
+pops = melt_clean_data(df_pop, 'Populations')
 
 # Merge Data
 imgs_pops = pd.merge(imgs, pops, on=['Country Code', 'Year'])
 imgs_pops['Rate(%)'] = imgs_pops['Immigrants']/imgs_pops['Populations']*100
-
-# Add Alpha3Code to imgs DataFrame
 imgs_pops['Alpha3Code'] = imgs_pops['Country Code']
 
-# Select Data
+# User input
 date_input = st.date_input('Select a Date', value=pd.to_datetime('2023-02-04'))
-st.write('We currently only have data for one date, 2023/02/04. We will include all the dates in a later '
-         'phase of the project')
-articles = articles[
-    articles['ContextualText'].str.contains('immigra', case=False, na=False)
-    ]
 
-# Convert articles' DateTime column to datetime
-articles['DateTime'] = pd.to_datetime(articles['DateTime'])
+# Filter articles
+articles = articles[articles['ContextualText'].str.contains('immigra', case=False, na=False)]
 articles_date = articles[articles['DateTime'].dt.date == date_input]
-
-articles_country = (
-    articles_date
-    .groupby('CountryCode')['DateTime']
-    .count()
-    .reset_index(name='Count')
-    )
-
-articles_country['Alpha3Code'] = (
-    articles_country['CountryCode']
-    .apply(convert_to_alpha3)
-    )
-
-articles_tone = (
-    articles_date
-    .groupby('CountryCode')['DocTone']
-    .mean()
-    .reset_index(name='Tone')
-    )
-
-articles_tone['Alpha3Code'] = (
-    articles_tone['CountryCode']
-    .apply(convert_to_alpha3)
-    )
-
+articles_country = articles_date.groupby('CountryCode')['DateTime'].count().reset_index(name='Count')
+articles_country['Alpha3Code'] = articles_country['CountryCode'].apply(convert_to_alpha3)
+articles_tone = articles_date.groupby('CountryCode')['DocTone'].mean().reset_index(name='Tone')
+articles_tone['Alpha3Code'] = articles_tone['CountryCode'].apply(convert_to_alpha3)
 imgs_date = imgs_pops[imgs_pops['Year'].dt.year == date_input.year]
 
 # Scatter Plot Data
 scts = pd.merge(articles_tone, imgs_date, on='Alpha3Code')
 
-# Illustrate figure
-fig_articles = px.choropleth(
-    articles_country, 
-    locations='Alpha3Code', 
-    color='Count', 
-    hover_name='CountryCode', 
-    color_continuous_scale='Viridis'
-    )
-fig_articles.update_geos(
-    showcoastlines=True, 
-    coastlinecolor='Black', 
-    showland=True, 
-    landcolor='white')
-fig_articles.update_layout(
-    title='Number of Articles about Immigrants by Country', 
-    geo=dict(showframe=False, showcoastlines=True)
-    )
-
-fig_tones = px.choropleth(
-    articles_tone, 
-    locations='Alpha3Code', 
-    color='Tone', 
-    hover_name='CountryCode', 
-    color_continuous_scale='Viridis'
-    )
-fig_tones.update_geos(
-    showcoastlines=True, 
-    coastlinecolor='Black', 
-    showland=True, 
-    landcolor='white')
-fig_tones.update_layout(
-    title='Mean Tone toward Immigrants by Country', 
-    geo=dict(showframe=False, showcoastlines=True)
-    )
-
-fig_imgs = px.choropleth(
-    imgs_date, 
-    locations='Alpha3Code', 
-    color='Rate(%)', 
-    hover_name='Alpha3Code', 
-    color_continuous_scale='Viridis'
-    )
-fig_imgs.update_geos(
-    showcoastlines=True, 
-    coastlinecolor='Black', 
-    showland=True, 
-    landcolor='white')
-fig_imgs.update_layout(
-    title='Immigration Rate per Capita (%) by Country', 
-    geo=dict(showframe=False, showcoastlines=True)
-    )
+# Plotting
+fig_articles = plot_choropleth(articles_country, 'Count', 'Number of Articles about Immigrants by Country')
+fig_tones = plot_choropleth(articles_tone, 'Tone', 'Mean Tone toward Immigrants by Country')
+fig_imgs = plot_choropleth(imgs_date, 'Rate(%)', 'New Immigration Rate per Capita (%) by Country')
 
 fig_scts = px.scatter(
-    scts, 
-    x='Rate(%)', 
-    y='Tone', 
-    text='Alpha3Code', 
-    title='Tone toward Immigrants vs. Immigration Rate per Capita(%) by Country',
-    hover_data={'Alpha3Code': True, 'Rate(%)': True, 'Tone': True},
-    trendline='ols',
-    color_discrete_sequence=['black'],
-    trendline_color_override='red'
-    )
+    scts, x='Rate(%)', y='Tone', text='Alpha3Code', title='Tone toward Immigrants vs. Immigration Rate per Capita(%) by Country',
+    hover_data={'Alpha3Code': True, 'Rate(%)': True, 'Tone': True}, trendline='ols', color_discrete_sequence=['black'], trendline_color_override='red'
+)
 fig_scts.update_traces(textposition='top center')
-       
+
 # Streamlit
 st.write('Articles Data Sample', articles.sample(5))
-st.write("Here we have a sample of 9,970 records of articles on 2023/02/04 "
-         "that contain key word 'immigra'. We will use the DocTone column to assess tone towards "
-         "immigrants. The data comes from GDELT")
 st.plotly_chart(fig_articles)
 st.plotly_chart(fig_tones)
+st.plotly_chart(fig_imgs)
+st.plotly_chart(fig_scts)
