@@ -16,6 +16,18 @@ def convert_to_alpha3(alpha2_code):
     except AttributeError:
         return None
 
+
+def select_columns(df_article):
+    articles = pd.DataFrame()
+    articles['DateTime'] = pd.to_datetime(df_article['DateTime'])
+    articles['CountryCode'] = df_article['CountryCode']
+    articles['Title'] = df_article['Title']
+    articles['ContextualText'] = df_article['ContextualText']
+    articles['DocTone'] = df_article['DocTone']
+    articles['URL'] = df_article['URL']
+    return articles
+
+
 # Function to prepare articles data
 def prepare_articles(df_article):
     articles = pd.DataFrame()
