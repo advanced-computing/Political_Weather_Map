@@ -1,6 +1,5 @@
 import pytest
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objs as go
 from main_page import melt_clean_data, load_data, select_columns
 from main_page import code_mapping, convert_to_alpha3, plot_choropleth
