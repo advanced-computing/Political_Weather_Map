@@ -119,5 +119,5 @@ def test_plot_choropleth(test_case_plot):
         assert isinstance(fig, go.Figure)
         print('Test passed: The function returned a Plotly Figure object.')
     except AssertionError:
-        print(f'Test failed')
+        print('Test failed')
         
