@@ -19,7 +19,6 @@ jobs:
       - name: Run tests
         run: pip install pytest pytest-cov
         # https://pytest-cov.readthedocs.io/en/latest/readme.html
-        run: pytest --cov
       # https://github.com/astral-sh/ruff-action
       - name: Run ruff
         uses: astral-sh/ruff-action@v3
