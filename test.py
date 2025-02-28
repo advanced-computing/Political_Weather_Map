@@ -120,4 +120,4 @@ def test_plot_choropleth(test_case_plot):
         print('Test passed: The function returned a Plotly Figure object.')
     except AssertionError:
         print('Test failed')
-        
+
