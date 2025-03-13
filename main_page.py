@@ -16,7 +16,7 @@ st.write('This project aims to assess how much immigration rates of a country'
 df_article = load_data('gdelt_20230204.csv')
 df_img = load_data('immigratation.csv')
 df_pop = load_data('population.csv')
-df_country = pd.read_csv('/Users/sambennett/Desktop/Computing_Project/Political_Weather_Map/country.py')
+df_country = pd.read_csv('country.csv')
 
 # Prepare Data
 articles = select_columns(df_article)
