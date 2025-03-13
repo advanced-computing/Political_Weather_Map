@@ -16,11 +16,12 @@ st.write('This project aims to assess how much immigration rates of a country'
 df_article = load_data('gdelt_20230204.csv')
 df_img = load_data('immigratation.csv')
 df_pop = load_data('population.csv')
+df_country = pd.read_csv(r'C:\Users\oiwah\OneDrive\デスクトップ\2025_Spring_Python\project\Political_Weather_Map\Political_Weather_Map\country.csv')
 
 # Prepare Data
 articles = select_columns(df_article)
 articles = code_mapping(articles, 'CountryCode')
-articles.loc[:, 'Alpha3Code'] = articles['CountryCode'].apply(convert_to_alpha3)
+articles.loc[:,'Alpha3Code'] = articles['CountryCode'].apply(convert_to_alpha3)
 imgs = melt_clean_data(df_img, 'Immigrants')
 pops = melt_clean_data(df_pop, 'Populations')
 
@@ -30,12 +31,12 @@ imgs_pops['Rate(%)'] = imgs_pops['Immigrants']/imgs_pops['Populations']*100
 imgs_pops['Alpha3Code'] = imgs_pops['Country Code']
 
 # User input
-st.sidebar.markdown("## Select a Date")
+st.sidebar.markdown("# Select a Date")
 date_input = st.sidebar.date_input('', value=pd.to_datetime('2023-02-04'))
-st.sidebar.write('We currently only have data for one date, 2023/02/04. '
-                 'We will include all the dates in a later phase of the project.')
+st.sidebar.write('We currently only have data for one date, 2023/02/04 '
+                 'and will include all the dates in Part 5.')
 
-# Filter articles
+# Filter Articles
 articles = articles[articles['ContextualText']
                     .str.contains('immigra', case=False, na=False)]
 articles_date = articles[articles['DateTime'].dt.date == date_input]
@@ -77,53 +78,102 @@ fig_imgs = plot_choropleth(
     'Rate(%)', 
     'New Immigration Rate per Capita (%) by Country')
 
-def fig_sct(scts):
-    fig_scts = px.scatter(
-        scts, 
-        x='Rate(%)', 
-        y='Tone', 
-        text='Alpha3Code',
-        hover_data={'Alpha3Code': True, 'Rate(%)': True, 'Tone': True},
-        trendline='ols',
-        color_discrete_sequence=['black'],
-        trendline_color_override='red'
+fig_scts = px.scatter(
+    scts, 
+    x='Rate(%)', 
+    y='Tone', 
+    text='Alpha3Code',
+    hover_data={'Alpha3Code': True, 'Rate(%)': True, 'Tone': True},
+    trendline='ols',
+    color_discrete_sequence=['black'],
+    trendline_color_override='red'
     )
-    fig_scts.update_traces(textposition='top center')
-    return fig_scts
-
-df_country = pd.read_csv(r'C:\Users\oiwah\OneDrive\デスクトップ\2025_Spring_Python\project\Political_Weather_Map\Political_Weather_Map\country.csv')
+fig_scts.update_traces(textposition='top center')
 
 # Streamlit
 st.sidebar.title('Navigation')
-page = st.sidebar.radio('Go to', ['Proposal', 'International Level Analysis', 'Country Level Analysis'])
+page = st.sidebar.radio('Go to',
+                        ['Proposal', 
+                         'International Level Analysis', 
+                         'Country Level Analysis'])
 
 if page == 'Proposal':
     st.title('Updated Proposal')
     st.write('**1. What dataset are you going to use?**')
-    st.write('  Articles [Gdelt] : https://www.gdeltproject.org/')
-    st.write('  Immigration [World Bank]: https://data.worldbank.org/indicator/SM.POP.NETM')
-    st.write('  Population [World Bank]: https://data.worldbank.org/indicator/SP.POP.TOTL')
-    st.write('  Country Code / Region: https://github.com/lukes/ISO-3166-Countries-with-Regional-Codes/blob/master/all/all.csv')
+    st.write('- Articles: [Gdelt](https://www.gdeltproject.org/)')
+    st.write('- Immigration: [World Bank](https://data.worldbank.org/indicator/SM.POP.NETM)')
+    st.write('- Population: [World Bank](https://data.worldbank.org/indicator/SP.POP.TOTL)')
+    st.write('- Country: [Code / Region]'
+             '(https://github.com/lukes/ISO-3166-Countries-with-Regional-Codes/blob/master/all/all.csv)')
     st.write('**2. What are your research questions?**')
-    st.write('  How are immigration rates associated with tone towards immigrants in news articles?')
-    st.write('  At the international level, do different groups of countries show different trends?')
-    st.write('  At the country level, what drives opinions about immigrants?')
+    st.write('- How are immigration rates associated with tone '
+             'towards immigrants in news articles?')
+    st.write('- At the international level, do different groups '
+             'of countries show different trends?')
+    st.write('- At the country level, what drives opinions about immigrants?')
     st.write('**3. What is your target visualization?**')
-    st.write('  Scatter Plot: Tone toward Immigrants vs Immigration Rate per Capita(%)')
-    st.write('  Map: Number of Articles about Immigrants by Country, Mean Article Tone toward Immigrants by Country, New Immigration Rate per Capita (%) by Country')
-    st.write('  Rank of Countries: Rank of Attitude toward Immigration, Rank of Annual New Immigration per Capita')
-    st.write('  Trend Line: Immigration Rate Trends by Country, Number of Articles Trends by Country (Under Construction), MeanTone Trends by Country (Under Construction)')
-    st.write('  Word Cloud: Popular Words in Articles by County')
+    st.write('- Scatter Plot: Tone toward Immigrants '
+             'vs Immigration Rate per Capita(%)')
+    st.write('- Map: Number of Articles about Immigrants by Country, '
+             'Mean Article Tone toward Immigrants by Country, '
+             'New Immigration Rate per Capita (%) by Country')
+    st.write('- Rank of Countries: Rank of Attitude toward Immigration, '
+             'Rank of Annual New Immigration per Capita')
+    st.write('- Trend Line: Immigration Rate Trends, '
+             'Number of Articles Trends*, MeanTone Trends*')
+    st.write('*These graphs cannot be created using only sample data '
+             'from articles, so they will be created after utilizing '
+             'Google BigQuery in Part 5 to obtain data on articles '
+             'spanning decades for all countries.')
+    st.write('- Word Cloud: Popular Words in Articles by County')
     st.write('**4. What are your known unknowns?**')
-    st.write('  In recent years, anti-immigrant movements have been gaining momentum in many countries, including the United States, France, and Germany. These movements are often linked to several factors, such as the rise in unemployment due to an increase in low-skilled migrant labor, the growing number of refugees resulting from conflicts in neighboring countries, and the widening social inequalities that fuel dissatisfaction among the impoverished. However, the precise ways in which these factors interact, and which one plays the most significant role, remain unclear. As a result, the underlying mechanisms and root causes driving anti-immigrant sentiment are still "known, but not fully understood.')
-    st.write('  Thus, this project aims to provide a tool for analyzing the causes of this phenomenon by comparing the tone of news articles about immigration as a metric for gauging public sentiment toward immigrants with the immigration rate from various perspectives, such as region and trend, and revealing the popular words in news articles.')
-    st.write('  Geopolitical Context: A neighboring war can heighten security concerns, political rhetoric, and public anxiety, leading to an increased publication of anti-immigration articles. This may distort the expected relationship between immigration rates and media tone, as sentiment shifts may be driven by geopolitical tensions rather than migration levels alone.')
-    st.write('  Political Context: Anti-immigration parties with strong media ties may amplify negative narratives, leading to a disproportionate volume of anti-immigration articles. This could distort the relationship between immigration rates and media tone, as harsher sentiment may stem from political influence rather than migration patterns alone. Researchers should consider the role of partisan media dynamics when interpreting tone shifts in different countries.')
+    st.write('In recent years, anti-immigrant movements have been gaining '
+             'momentum in many countries, including the United States, '
+             'France, and Germany. These movements are often linked to '
+             'several factors like the following examples. However, '
+             'the precise ways in which these factors interact, '
+             'and which one plays the most significant role, remain unclear. '
+             'As a result, the underlying mechanisms and root causes driving '
+             'anti-immigrant sentiment are still "known, but not understood.')
+    st.write('- Geopolitical Context: A neighboring war can heighten '
+             'security concerns, political rhetoric, and public anxiety, '
+             'leading to an increased anti-immigration articles, '
+             'exacerbating public sentiment than expected.'
+             'This tool allows users to test hypotheses '
+             'by comparing the media tone and immigration rate trends of '
+             'all countries with those of a user-selected group. '
+             'In this case, neighboring countries of a war-torn nation might '
+             'exhibit a lower media tone compared to the general trend.')
+    st.write('- Political Context: Anti-immigration parties '
+             'with strong media ties may amplify negative narratives, '
+             'disproportionately increasing anti-immigration articles. '
+             'This tool allows users to test hypotheses '
+             'by comparing the media tone trends and a specific event period. '
+             'In this case, when anti-immigration party gains power, '
+             'media tone may be lower than the general trend.')
+    st.write('Thus, this project aims to provide a tool for analyzing '
+             'the causes of this phenomenon by comparing the tone of '
+             'news articles about immigration as a metric for gauging '
+             'public sentiment toward immigrants with the immigration rate '
+             'from various perspectives, such as region, trend, and '
+             'popular words in news articles.')
     st.write('**5. What challenges do you anticipate?**')
-    st.write('  Currently, we only have English articles, but we can include other languages as well by searching for the words “immigration” and “immigrant” in other languages.')
-    st.write('  We are limited to yearly immigration data. Therefore, we do not know how immigration rates change within the year and how that affects tone on a short-term basis.')
-    st.write('  Since 2023 is the latest available immigration data, we must use it in our scatterplot when analyzing daily DocTone from 2024 and 2025, which may misrepresent trends. Geopolitical events, such as wars in neighboring countries, could drive real increases in immigration in 2024 and 2025 that are not reflected in our dataset. This may lead to lower recorded immigration rates being associated with harsher media tone, overestimating the impact of each point increase in immigration on sentiment.')
-
+    st.write('- Currently, we only have English articles, but we can include '
+             'other languages as well by searching for the words “immigration”'
+             ' and “immigrant” in other languages.')
+    st.write('- We are limited to yearly immigration data. Therefore, '
+             'we do not know how immigration rates change within the year '
+             'and how that affects tone on a short-term basis.')
+    st.write('- Since 2023 is the latest available immigration data, '
+             'we must use it in our scatterplot when analyzing daily DocTone '
+             'from 2024 and 2025, which may misrepresent trends. '
+             'After taking the entire data of the article tone, '
+             'we wil make this modification.')
+    st.write('- Note that Geopolitical events, such as wars '
+             'in neighboring countries, could drive real increases '
+             'in immigration in 2024 and 2025 that are not reflected '
+             'in the dataset. This could exaggerate the link '
+             'between immigration rates and media tone.')
 
 elif page == 'International Level Analysis':
     st.title('International Level Analysis')
@@ -140,24 +190,36 @@ elif page == 'International Level Analysis':
     region_options = ['World'] + df_country['region'].unique().tolist()
     selected_region = st.sidebar.selectbox('Select Region', region_options)
     if selected_region == 'World':
-        sub_region_options = ['All'] + df_country['sub-region'].unique().tolist()
+        sub_region_options=['All'] + df_country['sub-region'].unique().tolist()
     else:
-        sub_region_options = ['All'] + df_country[df_country['region'] == selected_region]['sub-region'].unique().tolist()
-    selected_sub_region = st.sidebar.selectbox('Select Sub-region', sub_region_options)
+        sub_region_options = (
+            ['All'] + 
+            df_country[
+                df_country['region'] == selected_region
+                ]['sub-region'].unique().tolist())
+    selected_sub_region = st.sidebar.selectbox(
+        'Select Sub-region', sub_region_options)
     if selected_region != 'World':
-        selected_countries = df_country[df_country['region'] == selected_region]['alpha-3'].tolist()
+        selected_countries = df_country[
+            df_country['region'] == selected_region
+            ]['alpha-3'].tolist()
     else:
         selected_countries = df_country['alpha-3'].tolist()
     if selected_sub_region != 'All':
-        selected_countries = df_country[df_country['sub-region'] == selected_sub_region]['alpha-3'].tolist()
+        selected_countries = df_country[
+            df_country['sub-region'] == selected_sub_region
+            ]['alpha-3'].tolist()
     scts = scts[scts['Alpha3Code'].isin(selected_countries)]
-    st.plotly_chart(fig_sct(scts))
-    st.write('Immigration Rate = Immigrants / Population. Immigration Data is from World Bank. Article Data is from GDELT.') 
+    st.plotly_chart(fig_scts)
+    st.write('Immigration Rate = Immigrants / Population.') 
 
     # Map
     st.write('### Data Map')
-    st.write('Users can intuitively understand the position of that country in the world through the map.')
-    option = st.radio('Select Data to Display:', ['Number of Articles', 'Mean Article Tones', 'Immigrant Rate'])
+    st.write('Users can intuitively understand the position of '
+             'that country in the world through the map.')
+    option = st.radio(
+        'Select Data to Display:', 
+        ['Number of Articles', 'Mean Article Tones', 'Immigrant Rate'])
     if option == 'Number of Articles':
         st.plotly_chart(fig_articles)
     elif option == 'Mean Article Tones':
@@ -179,27 +241,41 @@ elif page == 'International Level Analysis':
 else:
     st.title('Country Level Analysis')
     st.write('### Trends by Country')
-    st.write('Users can track trends over time to see how events, such as wars and elections, '
-             'shaped immigration rates by country '
+    st.write('Users can track trends over time to see how events, '
+             'such as wars and elections, shaped immigration rates by country '
              'by selecting countries, revealing their true impact.')
     
     # Show Trend
     st.sidebar.title('Filter Options')
     country_list = get_country_list(imgs_pops)
-    selected_countries = st.sidebar.multiselect('Select Countries', country_list, default=country_list[:3])
+    selected_countries = st.sidebar.multiselect(
+        'Select Countries', country_list, default=['CAN','DEU'])
     min_year = imgs_pops['Year'].dt.year.min()
     max_year = imgs_pops['Year'].dt.year.max()
-    start_year, end_year = st.sidebar.slider("Select Year Range", min_year, max_year, (min_year, max_year))
+    start_year, end_year = st.sidebar.slider(
+        'Select Year Range', min_year, max_year, (min_year, max_year))
 
-    st.write('This plot shows the immigration trends for selected countries over time.')
-    plot_immigration_trends(imgs_pops, selected_countries, start_year, end_year)
+    event_name = st.sidebar.text_input('Event Name', 'Syrian Civil War')
+    highlight_start, highlight_end = st.sidebar.slider(
+        'Highlight Period', min_year, max_year, (2011, 2023))
+
+    st.write('This plot shows the immigration trends '
+             'for selected countries over time.')
+    plot_immigration_trends(
+        imgs_pops, selected_countries, start_year, end_year, 
+        highlight_start, highlight_end, event_name)
 
     # Word Cloud
     st.write('### Word Cloud by Country')
-    st.write('Users can explore a news word cloud to uncover dominant narratives and key topics '
-             'by selecting a country, helping you predict causal relationships.')
-    articles_word = articles[articles['Alpha3Code'].isin(selected_countries)]['ContextualText'].values[0]
-    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(articles_word)
+    st.write('Users can explore a news word cloud to uncover '
+             'dominant narratives and key topics by selecting a country, '
+             'helping you predict causal relationships.')
+    articles_word = articles[
+        articles['Alpha3Code'].isin(selected_countries)
+        ]['ContextualText'].values[0]
+    wordcloud = WordCloud(
+        width=800, height=400, 
+        background_color='white').generate(articles_word)
     fig, ax = plt.subplots(figsize=(8, 4))
     ax.imshow(wordcloud, interpolation='bilinear')
     ax.axis('off')
