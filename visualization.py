@@ -58,3 +58,17 @@ def plot_immigration_trends(df, selected_countries, start_year, end_year,
             name=event_name if event_name else "Highlighted Period"
         ))
     st.plotly_chart(fig)
+
+def fig_sct(scts):
+    fig_scts = px.scatter(
+        scts, 
+        x='Rate(%)', 
+        y='Tone', 
+        text='Alpha3Code',
+        hover_data={'Alpha3Code': True, 'Rate(%)': True, 'Tone': True},
+        trendline='ols',
+        color_discrete_sequence=['black'],
+        trendline_color_override='red'
+        )
+    fig_scts.update_traces(textposition='top center')
+    return fig_scts

@@ -1,11 +1,10 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 from data_processing import load_data, select_columns, melt_clean_data
 from country import code_mapping, convert_to_alpha3, get_country_list
-from visualization import plot_choropleth, plot_immigration_trends
+from visualization import plot_choropleth, plot_immigration_trends, fig_sct
 
 st.title('Political Weather Map')
 st.write('Team: Charlotte Bacchetta, Samuel Bennett, Hiroyuki Oiwa')
@@ -16,7 +15,7 @@ st.write('This project aims to assess how much immigration rates of a country'
 df_article = load_data('gdelt_20230204.csv')
 df_img = load_data('immigratation.csv')
 df_pop = load_data('population.csv')
-df_country = pd.read_csv('country.csv')
+df_country = pd.read_csv(r'C:\Users\oiwah\OneDrive\デスクトップ\2025_Spring_Python\project\Political_Weather_Map\Political_Weather_Map\country.csv')
 
 # Prepare Data
 articles = select_columns(df_article)
@@ -77,18 +76,6 @@ fig_imgs = plot_choropleth(
     imgs_date, 
     'Rate(%)', 
     'New Immigration Rate per Capita (%) by Country')
-
-fig_scts = px.scatter(
-    scts, 
-    x='Rate(%)', 
-    y='Tone', 
-    text='Alpha3Code',
-    hover_data={'Alpha3Code': True, 'Rate(%)': True, 'Tone': True},
-    trendline='ols',
-    color_discrete_sequence=['black'],
-    trendline_color_override='red'
-    )
-fig_scts.update_traces(textposition='top center')
 
 # Streamlit
 st.sidebar.title('Navigation')
@@ -194,8 +181,7 @@ elif page == 'International Level Analysis':
     else:
         sub_region_options = (
             ['All'] + 
-            df_country[
-                df_country['region'] == selected_region
+            df_country[df_country['region'] == selected_region
                 ]['sub-region'].unique().tolist())
     selected_sub_region = st.sidebar.selectbox(
         'Select Sub-region', sub_region_options)
@@ -210,7 +196,7 @@ elif page == 'International Level Analysis':
             df_country['sub-region'] == selected_sub_region
             ]['alpha-3'].tolist()
     scts = scts[scts['Alpha3Code'].isin(selected_countries)]
-    st.plotly_chart(fig_scts)
+    st.plotly_chart(fig_sct(scts))
     st.write('Immigration Rate = Immigrants / Population.') 
 
     # Map
