@@ -6,3 +6,4 @@ pycountry
 statsmodels
 streamlit
 wordcloud
+pandas_gbq
