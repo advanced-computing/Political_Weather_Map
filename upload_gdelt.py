@@ -17,7 +17,7 @@ TABLE_ID = 'immigration'
 TABLE_FULL_ID = f'{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}'
 
 # Step 1: Find the last date in our cleaned table.
-start_date = datetime.strptime('2025-01-01', "%Y-%m-%d").date()
+start_date = datetime.strptime('2023-01-01', "%Y-%m-%d").date()
 end_date = (datetime.now(timezone.utc) - timedelta(days=1)).date()
 
 try:

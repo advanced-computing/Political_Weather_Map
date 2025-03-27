@@ -17,7 +17,7 @@ st.write('This project aims to assess how much immigration rates of a country'
 # User input
 st.sidebar.markdown("# Select a Date")
 date_input = st.sidebar.date_input('', value=pd.to_datetime('2025-02-01'))
-st.sidebar.write('Data is available from 2025/01/01.')
+st.sidebar.write('Data is available from 2023/01/01.')
 
 # Access to BigQuery
 credentials_info = json.loads(st.secrets['bigquery']['credentials_json'])
