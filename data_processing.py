@@ -8,7 +8,7 @@ def load_data(file_name):
 
 def select_columns(df_article):
     """Select relevant columns and convert DateTime to datetime type."""
-    columns = ['DateTime', 'CountryCode', 'Title', 'ContextualText', 'DocTone', 'URL']
+    columns = ['DateTime', 'CountryCode', 'Title', 'ContextualText', 'DocTone']
     df_article['DateTime'] = pd.to_datetime(df_article['DateTime'])
     return df_article[columns]
 

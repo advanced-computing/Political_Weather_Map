@@ -1,8 +1,11 @@
 import streamlit as st
 import pandas as pd
+import json
+from google.cloud import bigquery
+from google.oauth2 import service_account
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
-from data_processing import load_data, select_columns, melt_clean_data
+from data_processing import load_data, melt_clean_data
 from country import code_mapping, convert_to_alpha3, get_country_list
 from visualization import plot_choropleth, plot_immigration_trends, fig_sct
 
@@ -11,15 +14,35 @@ st.write('Team: Charlotte Bacchetta, Samuel Bennett, Hiroyuki Oiwa')
 st.write('This project aims to assess how much immigration rates of a country'
         ' are associated with its tone towards immigrants in news articles.')
 
+# User input
+st.sidebar.markdown("# Select a Date")
+date_input = st.sidebar.date_input('', value=pd.to_datetime('2025-02-01'))
+st.sidebar.write('Data is available from 2023/01/01.')
+
+# Access to BigQuery
+credentials_info = json.loads(st.secrets['bigquery']['credentials_json'])
+credentials = service_account.Credentials.from_service_account_info(credentials_info)
+client = bigquery.Client(credentials=credentials, project=credentials.project_id)
+
+# Config
+PROJECT_ID = 'political-weather-map'
+DATASET_ID = 'articles'
+TABLE_ID = 'immigration'
+TABLE_FULL_ID = f'{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}'
+
 # Load Data
-df_article = load_data('gdelt_20230204.csv')
+query = f'''
+SELECT * 
+FROM `{TABLE_FULL_ID}` 
+WHERE DATE(DateTime) = '{date_input.strftime('%Y-%m-%d')}'
+'''
+df_article = client.query(query).to_dataframe()
 df_img = load_data('immigratation.csv')
 df_pop = load_data('population.csv')
 df_country = pd.read_csv('country.csv')
 
 # Prepare Data
-articles = select_columns(df_article)
-articles = code_mapping(articles, 'CountryCode')
+articles = code_mapping(df_article, 'CountryCode')
 articles.loc[:,'Alpha3Code'] = articles['CountryCode'].apply(convert_to_alpha3)
 imgs = melt_clean_data(df_img, 'Immigrants')
 pops = melt_clean_data(df_pop, 'Populations')
@@ -29,15 +52,7 @@ imgs_pops = pd.merge(imgs, pops, on=['Country Code', 'Year'])
 imgs_pops['Rate(%)'] = imgs_pops['Immigrants']/imgs_pops['Populations']*100
 imgs_pops['Alpha3Code'] = imgs_pops['Country Code']
 
-# User input
-st.sidebar.markdown("# Select a Date")
-date_input = st.sidebar.date_input('', value=pd.to_datetime('2023-02-04'))
-st.sidebar.write('We currently only have data for one date, 2023/02/04 '
-                 'and will include all the dates in Part 5.')
-
 # Filter Articles
-articles = articles[articles['ContextualText']
-                    .str.contains('immigra', case=False, na=False)]
 articles_date = articles[articles['DateTime'].dt.date == date_input]
 articles_country = articles_date.groupby('CountryCode')['DateTime']\
     .count().reset_index(name='Count')
@@ -47,7 +62,10 @@ articles_tone = articles_date.groupby('CountryCode')['DocTone']\
     .mean().reset_index(name='Tone')
 articles_tone.loc[:, 'Alpha3Code'] = articles_tone['CountryCode']\
     .apply(convert_to_alpha3)
-imgs_date = imgs_pops[imgs_pops['Year'].dt.year == date_input.year]
+if date_input.year >= 2024:
+    imgs_date = imgs_pops[imgs_pops['Year'].dt.year == 2023]
+else:
+    imgs_date = imgs_pops[imgs_pops['Year'].dt.year == date_input.year]
 
 # Rank Data
 articles_tone_rank = articles_tone[['Tone', 'Alpha3Code']].sort_values(

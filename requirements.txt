@@ -6,3 +6,5 @@ pycountry
 statsmodels
 streamlit
 wordcloud
+pandas-gbq
+google-auth
