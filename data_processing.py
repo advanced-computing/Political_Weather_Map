@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 
+# Irrelevant now : with Big Queery
 def load_data(file_name):
     """Load CSV data from a file."""
     path = os.path.join(os.path.dirname(__file__), file_name)
