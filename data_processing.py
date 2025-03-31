@@ -1,11 +1,5 @@
 import pandas as pd
-import os
 
-# Irrelevant now : with Big Queery
-def load_data(file_name):
-    """Load CSV data from a file."""
-    path = os.path.join(os.path.dirname(__file__), file_name)
-    return pd.read_csv(path)
 
 def select_columns(df_article):
     """Select relevant columns and convert DateTime to datetime type."""

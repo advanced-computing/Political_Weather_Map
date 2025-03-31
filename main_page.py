@@ -5,7 +5,7 @@ from google.cloud import bigquery
 from google.oauth2 import service_account
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
-from data_processing import load_data, melt_clean_data, data_query
+from data_processing import melt_clean_data, data_query
 from country import code_mapping, convert_to_alpha3, get_country_list
 from visualization import plot_choropleth, plot_immigration_trends, fig_sct
 
@@ -15,7 +15,7 @@ st.write('This project aims to assess how much immigration rates of a country'
         ' are associated with its tone towards immigrants in news articles.')
 
 # User input
-st.sidebar.markdown("# Select a Date")
+st.sidebar.markdown('# Select a Date')
 date_input = st.sidebar.date_input('', value=pd.to_datetime('2025-02-01'))
 st.sidebar.write('Data is available from 2023/01/01.')
 
