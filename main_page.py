@@ -5,7 +5,7 @@ from google.cloud import bigquery
 from google.oauth2 import service_account
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
-from data_processing import load_data, melt_clean_data
+from data_processing import load_data, melt_clean_data, data_query
 from country import code_mapping, convert_to_alpha3, get_country_list
 from visualization import plot_choropleth, plot_immigration_trends, fig_sct
 
@@ -30,15 +30,15 @@ DATASET_ID = 'articles'
 TABLE_ID = 'immigration'
 TABLE_FULL_ID = f'{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}'
 
+
 # Load Data
-query = f'''
-SELECT * 
-FROM `{TABLE_FULL_ID}` 
-WHERE DATE(DateTime) = '{date_input.strftime('%Y-%m-%d')}'
-'''
-df_article = client.query(query).to_dataframe()
-df_img = load_data('immigratation.csv')
-df_pop = load_data('population.csv')
+query_article = data_query('political-weather-map', 'articles', 'immigration', date_input)
+query_img = data_query('political-weather-map', 'WorldBankData', 'Immigration', date_input)
+query_pop = data_query('political-weather-map', 'WorldBankData', 'Population', date_input)
+
+df_article = client.query(query_article).to_dataframe()
+df_img = client.query(query_img).to_dataframe()
+df_pop = client.query(query_pop).to_dataframe()
 df_country = pd.read_csv('country.csv')
 
 # Prepare Data
