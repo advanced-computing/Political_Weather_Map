@@ -3,15 +3,19 @@ import requests
 import io
 import pandas as pd
 from pandas_gbq import to_gbq
+import json
+import streamlit as st
+from google.cloud import bigquery
+from google.oauth2 import service_account
 
 # ACCESS TO BIG QUEERY : TO DO - create 
-credentials_info = json.loads(st.TBD['bigquery']['credentials_json'])
+credentials_info = json.loads(st.secrets['bigquery']['credentials_json'])
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 client = bigquery.Client(credentials=credentials, project=credentials.project_id)
 
 # CONFIG : TO DO - Hiro: access to big queery
-PROJECT_ID = 'political-weather-map'
-DATASET_ID = TBD
+PROJECT_ID = 'sipa-adv-c-charlotte-hiro-sam'
+DATASET_ID = 
 TABLE_ID = TBD
 TABLE_FULL_ID = f'{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}'
 
