@@ -5,7 +5,8 @@ from google.cloud import bigquery
 from google.oauth2 import service_account
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
-from data_processing import melt_clean_data, article_groupby_query, article_country_query, data_query
+from proposal import display_proposal
+from data_processing import melt_clean_data, fetch_bigquery_data, article_groupby_query, article_country_query, data_query
 from country import fips_to_iso2, iso2_to_fips, iso2_to_iso3, iso3_to_iso2, get_country_list
 from visualization import plot_choropleth, plot_immigration_trends, fig_sct
 import time
@@ -34,13 +35,14 @@ query_article_groupby = article_groupby_query(
 query_img = data_query('political-weather-map', 'WorldBankData', 'Immigration')
 query_pop = data_query('political-weather-map', 'WorldBankData', 'Population')
 
-df_article = client.query(query_article_groupby).to_dataframe()
-df_img = client.query(query_img).to_dataframe()
-df_pop = client.query(query_pop).to_dataframe()
+df_article = fetch_bigquery_data(client, query_article_groupby)
+df_img = fetch_bigquery_data(client, query_img)
+df_pop = fetch_bigquery_data(client, query_pop)
 df_country = pd.read_csv('country.csv')
 
 # Prepare Data
-articles = fips_to_iso2(df_article, 'CountryCode')
+url = 'https://www.geodatasource.com/resources/tutorials/international-country-code-fips-versus-iso-3166/?form=MG0AV3'
+articles = fips_to_iso2(url, df_article, 'CountryCode')
 articles.loc[:,'Alpha3Code'] = articles['CountryCode'].apply(iso2_to_iso3)
 imgs = melt_clean_data(df_img, 'Immigrants')
 pops = melt_clean_data(df_pop, 'Populations')
@@ -92,83 +94,7 @@ page = st.sidebar.radio('Go to',
                          'Country Level Analysis'])
 
 if page == 'Proposal':
-    st.title('Updated Proposal')
-    st.write('**1. What dataset are you going to use?**')
-    st.write('- Articles: [Gdelt](https://www.gdeltproject.org/)')
-    st.write('- Immigration: [World Bank](https://data.worldbank.org/indicator/SM.POP.NETM)')
-    st.write('- Population: [World Bank](https://data.worldbank.org/indicator/SP.POP.TOTL)')
-    st.write('- Country: [Code / Region]'
-             '(https://github.com/lukes/ISO-3166-Countries-with-Regional-Codes/blob/master/all/all.csv)')
-    st.write('**2. What are your research questions?**')
-    st.write('- How are immigration rates associated with tone '
-             'towards immigrants in news articles?')
-    st.write('- At the international level, do different groups '
-             'of countries show different trends?')
-    st.write('- At the country level, what drives opinions about immigrants?')
-    st.write('**3. What is your target visualization?**')
-    st.write('- Scatter Plot: Tone toward Immigrants '
-             'vs Immigration Rate per Capita(%)')
-    st.write('- Map: Number of Articles about Immigrants by Country, '
-             'Mean Article Tone toward Immigrants by Country, '
-             'New Immigration Rate per Capita (%) by Country')
-    st.write('- Rank of Countries: Rank of Attitude toward Immigration, '
-             'Rank of Annual New Immigration per Capita')
-    st.write('- Trend Line: Immigration Rate Trends, '
-             'Number of Articles Trends*, MeanTone Trends*')
-    st.write('*These graphs cannot be created using only sample data '
-             'from articles, so they will be created after utilizing '
-             'Google BigQuery in Part 5 to obtain data on articles '
-             'spanning decades for all countries.')
-    st.write('- Word Cloud: Popular Words in Articles by County')
-    st.write('**4. What are your known unknowns?**')
-    st.write('In recent years, anti-immigrant movements have been gaining '
-             'momentum in many countries, including the United States, '
-             'France, and Germany. These movements are often linked to '
-             'several factors like the following examples. However, '
-             'the precise ways in which these factors interact, '
-             'and which one plays the most significant role, remain unclear. '
-             'As a result, the underlying mechanisms and root causes driving '
-             'anti-immigrant sentiment are still "known, but not understood.')
-    st.write('- Geopolitical Context: A neighboring war can heighten '
-             'security concerns, political rhetoric, and public anxiety, '
-             'leading to an increased anti-immigration articles, '
-             'exacerbating public sentiment than expected.'
-             'This tool allows users to test hypotheses '
-             'by comparing the media tone and immigration rate trends of '
-             'all countries with those of a user-selected group. '
-             'In this case, neighboring countries of a war-torn nation might '
-             'exhibit a lower media tone compared to the general trend.')
-    st.write('- Political Context: Anti-immigration parties '
-             'with strong media ties may amplify negative narratives, '
-             'disproportionately increasing anti-immigration articles. '
-             'This tool allows users to test hypotheses '
-             'by comparing the media tone trends and a specific event period. '
-             'In this case, when anti-immigration party gains power, '
-             'media tone may be lower than the general trend.')
-    st.write('Thus, this project aims to provide a tool for analyzing '
-             'the causes of this phenomenon by comparing the tone of '
-             'news articles about immigration as a metric for gauging '
-             'public sentiment toward immigrants with the immigration rate '
-             'from various perspectives, such as region, trend, and '
-             'popular words in news articles.')
-    st.write('**5. What challenges do you anticipate?**')
-    st.write('- Currently, we only have English articles, but we can include '
-             'other languages as well by searching for the words “immigration”'
-             ' and “immigrant” in other languages.')
-    st.write('- We are limited to yearly immigration data. Therefore, '
-             'we do not know how immigration rates change within the year '
-             'and how that affects tone on a short-term basis.')
-    st.write('- Since 2023 is the latest available immigration data, '
-             'we must use it in our scatterplot when analyzing daily DocTone '
-             'from 2024 and 2025, which may misrepresent trends. '
-             'After taking the entire data of the article tone, '
-             'we wil make this modification.')
-    st.write('- Note that Geopolitical events, such as wars '
-             'in neighboring countries, could drive real increases '
-             'in immigration in 2024 and 2025 that are not reflected '
-             'in the dataset. This could exaggerate the link '
-             'between immigration rates and media tone.')
-
+    display_proposal() 
 elif page == 'International Level Analysis':
     st.title('International Level Analysis')
 
@@ -265,11 +191,11 @@ else:
              'helping you predict causal relationships.')
     selected_countries_iso2 = [
         iso3_to_iso2(code) for code in selected_countries_iso]
-    selected_countries_fips = iso2_to_fips(selected_countries_iso2)
+    selected_countries_fips = iso2_to_fips(url, selected_countries_iso2)
     query_article_country = article_country_query(
         'political-weather-map', 'articles', 'immigration',
         date_input, selected_countries_fips)
-    df_wordcloud = client.query(query_article_country).to_dataframe()
+    df_wordcloud = fetch_bigquery_data(client, query_article_country)
     text = " ".join(df_wordcloud['ContextualText'].dropna())
     wordcloud = WordCloud(
         width=800, height=400, 
