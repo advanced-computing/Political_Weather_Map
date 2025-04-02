@@ -5,9 +5,11 @@ from google.cloud import bigquery
 from google.oauth2 import service_account
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
-from data_processing import melt_clean_data, data_query
-from country import code_mapping, convert_to_alpha3, get_country_list
+from data_processing import melt_clean_data, article_groupby_query, article_country_query, data_query
+from country import fips_to_iso2, iso2_to_fips, iso2_to_iso3, iso3_to_iso2, get_country_list
 from visualization import plot_choropleth, plot_immigration_trends, fig_sct
+import time
+start = time.perf_counter()
 
 st.title('Political Weather Map')
 st.write('Team: Charlotte Bacchetta, Samuel Bennett, Hiroyuki Oiwa')
@@ -21,29 +23,25 @@ st.sidebar.write('Data is available from 2023/01/01.')
 
 # Access to BigQuery
 credentials_info = json.loads(st.secrets['bigquery']['credentials_json'])
-credentials = service_account.Credentials.from_service_account_info(credentials_info)
-client = bigquery.Client(credentials=credentials, project=credentials.project_id)
-
-# Config
-PROJECT_ID = 'political-weather-map'
-DATASET_ID = 'articles'
-TABLE_ID = 'immigration'
-TABLE_FULL_ID = f'{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}'
-
+credentials = service_account.Credentials.from_service_account_info(
+    credentials_info)
+client = bigquery.Client(
+    credentials=credentials, project=credentials.project_id)
 
 # Load Data
-query_article = data_query('political-weather-map', 'articles', 'immigration', date_input)
-query_img = data_query('political-weather-map', 'WorldBankData', 'Immigration', date_input)
-query_pop = data_query('political-weather-map', 'WorldBankData', 'Population', date_input)
+query_article_groupby = article_groupby_query(
+    'political-weather-map', 'articles', 'immigration', date_input)
+query_img = data_query('political-weather-map', 'WorldBankData', 'Immigration')
+query_pop = data_query('political-weather-map', 'WorldBankData', 'Population')
 
-df_article = client.query(query_article).to_dataframe()
+df_article = client.query(query_article_groupby).to_dataframe()
 df_img = client.query(query_img).to_dataframe()
 df_pop = client.query(query_pop).to_dataframe()
 df_country = pd.read_csv('country.csv')
 
 # Prepare Data
-articles = code_mapping(df_article, 'CountryCode')
-articles.loc[:,'Alpha3Code'] = articles['CountryCode'].apply(convert_to_alpha3)
+articles = fips_to_iso2(df_article, 'CountryCode')
+articles.loc[:,'Alpha3Code'] = articles['CountryCode'].apply(iso2_to_iso3)
 imgs = melt_clean_data(df_img, 'Immigrants')
 pops = melt_clean_data(df_pop, 'Populations')
 
@@ -53,22 +51,13 @@ imgs_pops['Rate(%)'] = imgs_pops['Immigrants']/imgs_pops['Populations']*100
 imgs_pops['Alpha3Code'] = imgs_pops['Country Code']
 
 # Filter Articles
-articles_date = articles[articles['DateTime'].dt.date == date_input]
-articles_country = articles_date.groupby('CountryCode')['DateTime']\
-    .count().reset_index(name='Count')
-articles_country.loc[:, 'Alpha3Code'] = articles_country['CountryCode']\
-    .apply(convert_to_alpha3)
-articles_tone = articles_date.groupby('CountryCode')['DocTone']\
-    .mean().reset_index(name='Tone')
-articles_tone.loc[:, 'Alpha3Code'] = articles_tone['CountryCode']\
-    .apply(convert_to_alpha3)
 if date_input.year >= 2024:
     imgs_date = imgs_pops[imgs_pops['Year'].dt.year == 2023]
 else:
     imgs_date = imgs_pops[imgs_pops['Year'].dt.year == date_input.year]
 
 # Rank Data
-articles_tone_rank = articles_tone[['Tone', 'Alpha3Code']].sort_values(
+articles_tone_rank = df_article[['Tone', 'Alpha3Code']].sort_values(
     by='Tone', ascending=False).reset_index(drop=True)
 articles_tone_rank.index += 1
 articles_tone_rank.index.name = 'Rank'
@@ -79,15 +68,15 @@ imgs_pops_rank.index += 1
 imgs_pops_rank.index.name = 'Rank'
 
 # Scatter Plot Data
-scts = pd.merge(articles_tone, imgs_date, on='Alpha3Code')
+scts = pd.merge(articles[['Tone', 'Alpha3Code']], imgs_date, on='Alpha3Code')
 
 # Plotting
 fig_articles = plot_choropleth(
-    articles_country, 
+    articles, 
     'Count', 
     'Number of Articles about Immigrants by Country')
 fig_tones = plot_choropleth(
-    articles_tone, 
+    articles, 
     'Tone', 
     'Mean Tone toward Immigrants by Country')
 fig_imgs = plot_choropleth(
@@ -216,7 +205,7 @@ elif page == 'International Level Analysis':
     scts = scts[scts['Alpha3Code'].isin(selected_countries)]
     st.plotly_chart(fig_sct(scts))
     st.write('Immigration Rate = Immigrants / Population.') 
-
+    
     # Map
     st.write('### Data Map')
     st.write('Users can intuitively understand the position of '
@@ -252,7 +241,7 @@ else:
     # Show Trend
     st.sidebar.title('Filter Options')
     country_list = get_country_list(imgs_pops)
-    selected_countries = st.sidebar.multiselect(
+    selected_countries_iso = st.sidebar.multiselect(
         'Select Countries', country_list, default=['CAN','DEU'])
     min_year = imgs_pops['Year'].dt.year.min()
     max_year = imgs_pops['Year'].dt.year.max()
@@ -266,7 +255,7 @@ else:
     st.write('This plot shows the immigration trends '
              'for selected countries over time.')
     plot_immigration_trends(
-        imgs_pops, selected_countries, start_year, end_year, 
+        imgs_pops, selected_countries_iso, start_year, end_year, 
         highlight_start, highlight_end, event_name)
 
     # Word Cloud
@@ -274,14 +263,23 @@ else:
     st.write('Users can explore a news word cloud to uncover '
              'dominant narratives and key topics by selecting a country, '
              'helping you predict causal relationships.')
-    articles_word = articles[
-        articles['Alpha3Code'].isin(selected_countries)
-        ]['ContextualText'].values[0]
+    selected_countries_iso2 = [
+        iso3_to_iso2(code) for code in selected_countries_iso]
+    selected_countries_fips = iso2_to_fips(selected_countries_iso2)
+    query_article_country = article_country_query(
+        'political-weather-map', 'articles', 'immigration',
+        date_input, selected_countries_fips)
+    df_wordcloud = client.query(query_article_country).to_dataframe()
+    text = " ".join(df_wordcloud['ContextualText'].dropna())
     wordcloud = WordCloud(
         width=800, height=400, 
-        background_color='white').generate(articles_word)
+        background_color='white').generate(text)
     fig, ax = plt.subplots(figsize=(8, 4))
     ax.imshow(wordcloud, interpolation='bilinear')
     ax.axis('off')
-    ax.set_title(f'Word Cloud for {", ".join(selected_countries)}')
+    ax.set_title(f'Word Cloud for {", ".join(selected_countries_iso)}')
     st.pyplot(fig)
+
+end = time.perf_counter()
+elapsed = end - start
+print(f'Time taken: {elapsed:.2f} seconds')
