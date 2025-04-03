@@ -22,71 +22,7 @@ st.sidebar.markdown('# Select a Date')
 date_input = st.sidebar.date_input('', value=pd.to_datetime('2025-02-01'))
 st.sidebar.write('Data is available from 2023/01/01.')
 
-# Access to BigQuery
-credentials_info = json.loads(st.secrets['bigquery']['credentials_json'])
-credentials = service_account.Credentials.from_service_account_info(
-    credentials_info)
-client = bigquery.Client(
-    credentials=credentials, project=credentials.project_id)
-
-# Load Data
-query_article_groupby = article_groupby_query(
-    'political-weather-map', 'articles', 'immigration', date_input)
-query_img = data_query('political-weather-map', 'WorldBankData', 'Immigration')
-query_pop = data_query('political-weather-map', 'WorldBankData', 'Population')
-
-df_article = fetch_bigquery_data(client, query_article_groupby)
-df_img = fetch_bigquery_data(client, query_img)
-df_pop = fetch_bigquery_data(client, query_pop)
-df_country = pd.read_csv('country.csv')
-
-# Prepare Data
-url = 'https://www.geodatasource.com/resources/tutorials/international-country-code-fips-versus-iso-3166/?form=MG0AV3'
-articles = fips_to_iso2(url, df_article, 'CountryCode')
-articles.loc[:,'Alpha3Code'] = articles['CountryCode'].apply(iso2_to_iso3)
-imgs = melt_clean_data(df_img, 'Immigrants')
-pops = melt_clean_data(df_pop, 'Populations')
-
-# Merge Data
-imgs_pops = pd.merge(imgs, pops, on=['Country Code', 'Year'])
-imgs_pops['Rate(%)'] = imgs_pops['Immigrants']/imgs_pops['Populations']*100
-imgs_pops['Alpha3Code'] = imgs_pops['Country Code']
-
-# Filter Articles
-if date_input.year >= 2024:
-    imgs_date = imgs_pops[imgs_pops['Year'].dt.year == 2023]
-else:
-    imgs_date = imgs_pops[imgs_pops['Year'].dt.year == date_input.year]
-
-# Rank Data
-articles_tone_rank = df_article[['Tone', 'Alpha3Code']].sort_values(
-    by='Tone', ascending=False).reset_index(drop=True)
-articles_tone_rank.index += 1
-articles_tone_rank.index.name = 'Rank'
-
-imgs_pops_rank = imgs_pops[['Rate(%)', 'Alpha3Code']].sort_values(
-    by='Rate(%)', ascending=False).reset_index(drop=True)
-imgs_pops_rank.index += 1
-imgs_pops_rank.index.name = 'Rank'
-
-# Scatter Plot Data
-scts = pd.merge(articles[['Tone', 'Alpha3Code']], imgs_date, on='Alpha3Code')
-
-# Plotting
-fig_articles = plot_choropleth(
-    articles, 
-    'Count', 
-    'Number of Articles about Immigrants by Country')
-fig_tones = plot_choropleth(
-    articles, 
-    'Tone', 
-    'Mean Tone toward Immigrants by Country')
-fig_imgs = plot_choropleth(
-    imgs_date, 
-    'Rate(%)', 
-    'New Immigration Rate per Capita (%) by Country')
-
-# Streamlit
+# Pages
 st.sidebar.title('Navigation')
 page = st.sidebar.radio('Go to',
                         ['Proposal', 
@@ -95,7 +31,74 @@ page = st.sidebar.radio('Go to',
 
 if page == 'Proposal':
     display_proposal() 
-elif page == 'International Level Analysis':
+
+if page != 'Proposal':
+    # Access to BigQuery
+    credentials_info = json.loads(st.secrets['bigquery']['credentials_json'])
+    credentials = service_account.Credentials.from_service_account_info(
+        credentials_info)
+    client = bigquery.Client(
+        credentials=credentials, project=credentials.project_id)
+    
+    # Load Data
+    query_article_groupby = article_groupby_query(
+        'political-weather-map', 'articles', 'immigration', date_input)
+    query_img = data_query('political-weather-map', 'WorldBankData', 'Immigration')
+    query_pop = data_query('political-weather-map', 'WorldBankData', 'Population')
+
+    df_article = fetch_bigquery_data(client, query_article_groupby)
+    df_img = fetch_bigquery_data(client, query_img)
+    df_pop = fetch_bigquery_data(client, query_pop)
+    df_country = pd.read_csv('country.csv')
+    
+    # Prepare Data
+    url = 'https://www.geodatasource.com/resources/tutorials/international-country-code-fips-versus-iso-3166/?form=MG0AV3'
+    articles = fips_to_iso2(url, df_article, 'CountryCode')
+    articles.loc[:,'Alpha3Code'] = articles['CountryCode'].apply(iso2_to_iso3)
+    imgs = melt_clean_data(df_img, 'Immigrants')
+    pops = melt_clean_data(df_pop, 'Populations')
+
+    # Merge Data
+    imgs_pops = pd.merge(imgs, pops, on=['Country Code', 'Year'])
+    imgs_pops['Rate(%)'] = imgs_pops['Immigrants']/imgs_pops['Populations']*100
+    imgs_pops['Alpha3Code'] = imgs_pops['Country Code']
+
+    # Filter Articles
+    if date_input.year >= 2024:
+        imgs_date = imgs_pops[imgs_pops['Year'].dt.year == 2023]
+    else:
+        imgs_date = imgs_pops[imgs_pops['Year'].dt.year == date_input.year]
+
+    # Rank Data
+    articles_tone_rank = df_article[['Tone', 'Alpha3Code']].sort_values(
+        by='Tone', ascending=False).reset_index(drop=True)
+    articles_tone_rank.index += 1
+    articles_tone_rank.index.name = 'Rank'
+
+    imgs_pops_rank = imgs_pops[['Rate(%)', 'Alpha3Code']].sort_values(
+        by='Rate(%)', ascending=False).reset_index(drop=True)
+    imgs_pops_rank.index += 1
+    imgs_pops_rank.index.name = 'Rank'
+
+    # Scatter Plot Data
+    scts = pd.merge(articles[['Tone', 'Alpha3Code']], imgs_date, on='Alpha3Code')
+
+    # Plotting
+    fig_articles = plot_choropleth(
+        articles, 
+        'Count', 
+        'Number of Articles about Immigrants by Country')
+    fig_tones = plot_choropleth(
+        articles, 
+        'Tone', 
+        'Mean Tone toward Immigrants by Country')
+    fig_imgs = plot_choropleth(
+        imgs_date, 
+        'Rate(%)', 
+        'New Immigration Rate per Capita (%) by Country')
+
+# Streamlit
+if page == 'International Level Analysis':
     st.title('International Level Analysis')
 
     # Scatter Plot
@@ -157,7 +160,7 @@ elif page == 'International Level Analysis':
         st.write('**Rank of Annual New Immigration per capita**')
         st.dataframe(imgs_pops_rank)
 
-else:
+elif page == 'Country Level Analysis':
     st.title('Country Level Analysis')
     st.write('### Trends by Country')
     st.write('Users can track trends over time to see how events, '

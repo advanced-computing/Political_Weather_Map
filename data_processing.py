@@ -13,7 +13,9 @@ def melt_clean_data(df, value_name):
 
 @st.cache_data(ttl=24 * 60 * 60)
 def fetch_bigquery_data(_client, query):
-    return _client.query(query).to_dataframe()
+    job = _client.query(query) 
+    df = job.result().to_dataframe() 
+    return df
 
 def article_groupby_query(PROJECT_ID, DATASET_ID, TABLE_ID, date_input):
     TABLE_FULL_ID = f'{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}'   
