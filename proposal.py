@@ -2,8 +2,8 @@ import streamlit as st
 
 def display_proposal():
     st.markdown("""
-    # Updated Proposal
-
+    Team: Charlotte Bacchetta, Samuel Bennett, Hiroyuki Oiwa
+    
     ## 1. What dataset are you going to use?
     - **Articles**: [Gdelt](https://www.gdeltproject.org/)
     - **Immigration**: [World Bank](https://data.worldbank.org/indicator/SM.POP.NETM)
@@ -26,9 +26,8 @@ def display_proposal():
       - Rank of Annual New Immigration per Capita
     - **Trend Line**: 
       - Immigration Rate Trends
-      - Number of Articles Trends*
-      - Mean Tone Trends*
-      - (*These graphs require more data from Google BigQuery in Part 5.*)
+      - Number of Articles Trends
+      - Mean Tone Trends
     - **Word Cloud**: Popular Words in Articles by Country
 
     ## 4. What are your known unknowns?
