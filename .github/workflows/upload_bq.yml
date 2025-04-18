@@ -1,0 +1,25 @@
+name: Upload Daily GDELT Data to BigQuery
+
+on:
+  schedule:
+    - cron: '19 29 * * *'  # 3:29 PM Eastern Time (DST)
+  workflow_dispatch:
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+        
+      - name: Upload to BigQuery
+        run: python upload_gdelt.py
