@@ -4,9 +4,11 @@ from pandas_gbq import to_gbq, read_gbq
 from datetime import datetime, timedelta, timezone
 from google.cloud import bigquery
 from google.oauth2 import service_account
+import os
 
 # Access to BigQuery
-credentials_info = json.loads(st.secrets['bigquery']['credentials_json'])
+bq_credentials = os.enviorn.get('BIGQUERY')
+credentials_info = json.loads(bq_credentials)
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 client = bigquery.Client(credentials=credentials, project=credentials.project_id)
 
