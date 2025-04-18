@@ -7,7 +7,7 @@ from google.oauth2 import service_account
 import os
 
 # Access to BigQuery
-bq_credentials = os.enviorn.get('BIGQUERY')
+bq_credentials = os.environ.get('BIGQUERY')
 credentials_info = json.loads(bq_credentials)
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 client = bigquery.Client(credentials=credentials, project=credentials.project_id)

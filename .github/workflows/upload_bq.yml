@@ -2,7 +2,7 @@ name: Upload Daily GDELT Data to BigQuery
 
 on:
   schedule:
-    - cron: '45 19 * * *'  # 3:29 PM Eastern Time (DST)
+    - cron: '48 19 * * *'  # 3:29 PM Eastern Time (DST)
   workflow_dispatch:
 
 jobs:
