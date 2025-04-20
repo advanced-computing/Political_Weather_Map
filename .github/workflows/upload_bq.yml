@@ -20,6 +20,10 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      - name: Upload to BigQuery
+        env:
+          BIGQUERY: ${{ secrets.BIGQUERY }}
         
       - name: Upload to BigQuery
         run: python upload_gdelt.py
