@@ -1,0 +1,32 @@
+name: Upload Yearly WorldBank Data to BigQuery
+
+on:
+  schedule:
+    - cron: '0 6 1 3 *'  # 2:00 AM Eastern Time (DST) on March 1 every year
+  workflow_dispatch:
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Upload immigration data to BigQuery
+        env:
+          BIGQUERY: ${{ secrets.BIGQUERY2 }}
+        run: python immigration_upload.py
+
+      - name: Upload population data to BigQuery
+        env:
+          BIGQUERY: ${{ secrets.BIGQUERY2 }}
+        run: python population_upload.py

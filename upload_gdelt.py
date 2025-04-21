@@ -49,7 +49,7 @@ else:
 def load_to_gbq(df):
     to_gbq(
         df, TABLE_FULL_ID, project_id=PROJECT_ID,
-        if_exists='append'
+        if_exists='append', credentials=credentials
     )
     
 if __name__ == '__main__':

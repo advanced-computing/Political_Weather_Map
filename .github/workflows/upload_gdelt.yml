@@ -2,7 +2,7 @@ name: Upload Daily GDELT Data to BigQuery
 
 on:
   schedule:
-    - cron: '05 22 * * *'  # 3:29 PM Eastern Time (DST)
+    - cron: '00 06 * * *'  # 2:00 AM Eastern Time (DST)
   workflow_dispatch:
 
 jobs:
@@ -23,7 +23,5 @@ jobs:
 
       - name: Upload to BigQuery
         env:
-          BIGQUERY: ${{ secrets.BIGQUERY }}
-        
-      - name: Upload to BigQuery
+          BIGQUERY: ${{ secrets.BIGQUERY2 }}
         run: python upload_gdelt.py
