@@ -18,10 +18,10 @@ def download_and_extract_csv(url):
     return df
 
 # Step 2: Upload the full DataFrame to BigQuery, replacing any existing table
-def truncate_and_upload(PROJECT_ID, TABLE_FULL_ID, url):
+def truncate_and_upload(PROJECT_ID, TABLE_FULL_ID, url, credentials):
 
     df = download_and_extract_csv(url)  # Download and load data
     
     # Replace entire table in BigQuery
-    to_gbq(df, TABLE_FULL_ID, project_id=PROJECT_ID, if_exists='replace')
+    to_gbq(df, TABLE_FULL_ID, project_id=PROJECT_ID, if_exists='replace', credentials=credentials)
 

@@ -1,12 +1,13 @@
 import json
-import streamlit as st
 from google.cloud import bigquery
 from google.oauth2 import service_account
 from upload_data import truncate_and_upload
+import os
 
 
 # ACCESS TO BIG QUEERY
-credentials_info = json.loads(st.secrets['bigquery']['credentials_json'])
+bq_credentials = os.environ.get('BIGQUERY')
+credentials_info = json.loads(bq_credentials)
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 client = bigquery.Client(credentials=credentials, project=credentials.project_id)
 
@@ -20,4 +21,4 @@ url = 'https://api.worldbank.org/v2/en/indicator/SM.POP.NETM?downloadformat=csv'
 
 
 # Execute the upload process
-truncate_and_upload(PROJECT_ID, TABLE_FULL_ID, url)
+truncate_and_upload(PROJECT_ID, TABLE_FULL_ID, url, credentials)
