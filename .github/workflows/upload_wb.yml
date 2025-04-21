@@ -1,4 +1,4 @@
-name: Upload Daily GDELT Data to BigQuery
+name: Upload Yearly WorldBank Data to BigQuery
 
 on:
   schedule:
