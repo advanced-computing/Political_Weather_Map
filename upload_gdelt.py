@@ -7,7 +7,6 @@ import os
 
 # Access to BigQuery
 bq_credentials = os.environ.get('BIGQUERY')
-print(bq_credentials)
 credentials_info = json.loads(bq_credentials)
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 client = bigquery.Client(credentials=credentials, project=credentials.project_id)
@@ -50,7 +49,7 @@ else:
 def load_to_gbq(df):
     to_gbq(
         df, TABLE_FULL_ID, project_id=PROJECT_ID,
-        if_exists='append'
+        if_exists='append', credentials=credentials
     )
     
 if __name__ == '__main__':
