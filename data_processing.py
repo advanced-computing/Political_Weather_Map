@@ -44,7 +44,7 @@ def data_query(PROJECT_ID, DATASET_ID, TABLE_ID):
     TABLE_FULL_ID = f'{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}'   
     query = f'''
     SELECT * EXCEPT(`Country Name`,
-    `Indicator Name`, `Indicator Code`, `Unnamed: 68`)
+    `Indicator Name`, `Indicator Code`, `Unnamed: 69`)
     FROM `{TABLE_FULL_ID}` 
     '''
     return query
