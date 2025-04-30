@@ -60,6 +60,11 @@ def iso3_to_iso2(alpha3_code):
     except AttributeError:
         return None
 
+def enrich_country_codes(df, url, country_col='CountryCode'):
+    df = fips_to_iso2(url, df, country_col)
+    df['Alpha3Code'] = df['CountryCode'].apply(iso2_to_iso3)
+    return df
+
 def get_country_list(df):
     """Get unique list of Alpha-3 country codes from the dataset."""
     return sorted(df['Alpha3Code'].dropna().unique())
