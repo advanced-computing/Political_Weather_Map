@@ -40,7 +40,7 @@ def render_data_map(fig_articles, fig_tones, fig_imgs):
         st.plotly_chart(fig_imgs, use_container_width=True)
 
     st.write('This figure shows three types of maps to '
-             'understand the global position of countries in a map.')
+             'understand the global position of countries.')
 
 def render_trend_tone(client, url, selected_countries_iso, start_year, end_year):
     query = stats_trend_query('political-weather-map',
@@ -54,8 +54,8 @@ def render_trend_img(imgs_pops, selected_countries_iso, start_year, end_year, hi
     plot_immigration_trends(
         imgs_pops, selected_countries_iso, start_year, end_year, 
         highlight_start, highlight_end, event_name)
-    st.write('Track trends over time to see how events, '
-             'such as wars and elections, shaped immigration rates of'
+    st.write('Track trends over time to see how events '
+             'such as wars and elections shape immigration rates of '
              'selected countries, revealing their true impact.')
 
 def render_wordcloud(client, url, selected_countries_iso, date_input):
@@ -74,6 +74,6 @@ def render_wordcloud(client, url, selected_countries_iso, date_input):
     ax.axis('off')
     ax.set_title(f'Word Cloud for {", ".join(selected_countries_iso)}')
     st.pyplot(fig, use_container_width=True)
-    st.write('Users can explore a news word cloud to uncover '
-             'dominant narratives and key topics by selecting a country, '
-             'helping you predict causal relationships.')
+    st.write('Users can explore a word cloud to uncover '
+             'dominant narratives and key topics by country, '
+             'helping them predict causal relationships.')

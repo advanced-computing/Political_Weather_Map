@@ -16,7 +16,7 @@ def fig_sct(scts):
     fig_scts.update_traces(textposition='top center')
     fig_scts.update_layout(width=700,
                            height=400,
-                            xaxis_title='Immigration Rate(%) *Immigrants / Population',
+                            xaxis_title='Immigration Rate(%) (Immigrants / Population)',
                             yaxis_title='Article Tone toward Immigrants')
     return fig_scts
 
