@@ -86,3 +86,28 @@ def plot_immigration_trends(df, selected_countries,
             name=event_name if event_name else "Highlighted Period"
         ))
     st.plotly_chart(fig, use_container_width=True)
+    
+def plot_tone_trends(df_tone, selected_countries, start_year, end_year):
+    df_tone['Year'] = df_tone['Year'].astype(int)
+    df_tone = df_tone[
+        (df_tone['Year'] >= start_year) & 
+        (df_tone['Year'] <= end_year) & 
+        (df_tone['Alpha3Code'].isin(selected_countries))
+    ]
+    fig = px.line(df_tone,
+                  x='Year',
+                  y='Tone',
+                  color='Alpha3Code',
+                  markers=True)
+    fig.update_layout(xaxis_title='Year',
+                      yaxis_title='Article Tone toward Immigrants')
+
+    st.plotly_chart(fig, use_container_width=True)
+    
+def make_rank_df(df, value_col, country_col='Alpha3Code'):
+    ranked = df[[value_col, country_col]].sort_values(by=value_col, ascending=False)
+    ranked = ranked.reset_index(drop=True)
+    ranked.index += 1
+    ranked.index.name = 'Rank'
+    return ranked
+

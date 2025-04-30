@@ -27,6 +27,51 @@ def article_groupby_query(PROJECT_ID, DATASET_ID, TABLE_ID, date_input):
     '''
     return query
 
+def stats_trend_query(PROJECT_ID, DATASET_ID, TABLE_ID, start_year, end_year):
+    TABLE_FULL_ID = f'{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}'
+    query = f"""
+    SELECT 
+        CountryCode,
+        EXTRACT(YEAR FROM DateTime) AS Year,
+        AVG(DocTone) AS Tone
+    FROM `{TABLE_FULL_ID}`
+    WHERE EXTRACT(YEAR FROM DateTime) BETWEEN {max(2018, start_year)} AND {end_year}
+    GROUP BY CountryCode, Year
+    ORDER BY Year, CountryCode
+    """
+    return query
+
+def stats_year_query(PROJECT_ID, DATASET_ID, TABLE_ID, date_input):
+    TABLE_FULL_ID = f'{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}'   
+    query = f'''
+    SELECT CountryCode, AVG(DocTone) AS Tone 
+    FROM `{TABLE_FULL_ID}`  
+    WHERE EXTRACT(YEAR FROM DateTime) = {date_input.year}  
+    GROUP BY CountryCode
+    '''
+    return query
+
+def stats_month_query(PROJECT_ID, DATASET_ID, TABLE_ID, date_input):
+    TABLE_FULL_ID = f'{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}'   
+    query = f'''
+    SELECT CountryCode, AVG(DocTone) AS Tone 
+    FROM `{TABLE_FULL_ID}`  
+    WHERE EXTRACT(YEAR FROM DateTime) = {date_input.year}  
+    AND EXTRACT(MONTH FROM DateTime) = {date_input.month}
+    GROUP BY CountryCode
+    '''
+    return query
+
+def stats_date_query(PROJECT_ID, DATASET_ID, TABLE_ID, date_input):
+    TABLE_FULL_ID = f'{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}'   
+    query = f'''
+    SELECT CountryCode, AVG(DocTone) AS Tone 
+    FROM `{TABLE_FULL_ID}`  
+    WHERE DATE(DateTime) = '{date_input.strftime('%Y-%m-%d')}'
+    GROUP BY CountryCode
+    '''
+    return query
+
 def article_country_query(PROJECT_ID, DATASET_ID, TABLE_ID,
                           date_input, selected_countries):
     TABLE_FULL_ID = f'{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}'   
@@ -48,3 +93,4 @@ def data_query(PROJECT_ID, DATASET_ID, TABLE_ID):
     FROM `{TABLE_FULL_ID}` 
     '''
     return query
+
