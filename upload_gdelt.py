@@ -18,7 +18,7 @@ TABLE_ID = 'immigration'
 TABLE_FULL_ID = f'{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}'
 
 # Append the data by finding the missing dates in our table and load the corresponding data
-start_date = datetime.strptime('2018-01-01', "%Y-%m-%d").date()
+start_date = datetime.strptime('2023-01-01', "%Y-%m-%d").date()
 end_date = (datetime.now(timezone.utc) - timedelta(days=1)).date()
 
 try:
