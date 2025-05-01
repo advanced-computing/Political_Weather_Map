@@ -24,9 +24,9 @@ jobs:
       - name: Upload immigration data to BigQuery
         env:
           BIGQUERY: ${{ secrets.BIGQUERY2 }}
-        run: python immigration_upload.py
+        run: python upload_immigration.py
 
       - name: Upload population data to BigQuery
         env:
           BIGQUERY: ${{ secrets.BIGQUERY2 }}
-        run: python population_upload.py
+        run: python upload_population.py
