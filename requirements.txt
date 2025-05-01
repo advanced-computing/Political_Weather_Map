@@ -8,3 +8,5 @@ streamlit
 wordcloud
 pandas-gbq
 google-auth
+google-cloud-bigquery-storage
+pyarrow
