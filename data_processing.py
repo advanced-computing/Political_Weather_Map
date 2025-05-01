@@ -1,8 +1,8 @@
 import pandas as pd
 import streamlit as st
 
+# ------------------Melt and clean Data for Visualization------------------
 def melt_clean_data(df, value_name):
-    """Melt and clean data for visualization."""
     df_melted = df.melt(
         id_vars=['Country Code'], 
         var_name='Year', 
@@ -11,12 +11,14 @@ def melt_clean_data(df, value_name):
     df_melted['Year'] = pd.to_datetime(df_melted['Year'], format='%Y')
     return df_melted
 
+# ------------------Fetch Data------------------
 @st.cache_data(ttl=24 * 60 * 60)
 def fetch_bigquery_data(_client, query):
     job = _client.query(query) 
     df = job.result().to_dataframe() 
     return df
 
+# ------------------Generate Query------------------
 def article_groupby_query(PROJECT_ID, DATASET_ID, TABLE_ID, date_input):
     TABLE_FULL_ID = f'{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}'   
     query = f'''

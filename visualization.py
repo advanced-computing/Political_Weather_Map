@@ -2,6 +2,7 @@ import plotly.express as px
 import streamlit as st
 import plotly.graph_objects as go
 
+# ------------------Immigration & Article Sentiment------------------
 def fig_sct(scts):
     fig_scts = px.scatter(
         scts, 
@@ -20,8 +21,8 @@ def fig_sct(scts):
                             yaxis_title='Article Tone toward Immigrants')
     return fig_scts
 
+# ------------------Choropleth Map Visualization------------------
 def plot_choropleth(data, value, title):
-    """Create a choropleth map visualization."""
     fig = px.choropleth(
         data, 
         locations='Alpha3Code', 
@@ -43,25 +44,12 @@ def plot_choropleth(data, value, title):
     fig.update_layout(width=700, height=400)
     return fig
 
-def plot_trends(df, selected_countries, start_year, end_year, y):
-    """Plot trends over time for selected countries."""
-    df_filtered = df[(df['Year'].dt.year >= start_year) & 
-                     (df['Year'].dt.year <= end_year) & 
-                     (df['Alpha3Code'].isin(selected_countries))]
-    fig = px.line(df_filtered,
-                  x='Year',
-                  y=f'{y}',
-                  color='Alpha3Code',
-                  markers=True,
-                  title=f'{y} Trends by Country')
-    st.plotly_chart(fig, use_container_width=True)
-
+# ------------------Trends of Immigration Over Time------------------
 def plot_immigration_trends(df, selected_countries,
                             start_year, end_year,
                             highlight_start=None,
                             highlight_end=None,
                             event_name=''):
-    """Plot immigration rate trends over time for selected countries."""
     df_filtered = df[(df['Year'].dt.year >= start_year) & 
                      (df['Year'].dt.year <= end_year) & 
                      (df['Alpha3Code'].isin(selected_countries))]
@@ -86,7 +74,8 @@ def plot_immigration_trends(df, selected_countries,
             name=event_name if event_name else "Highlighted Period"
         ))
     st.plotly_chart(fig, use_container_width=True)
-    
+
+# ------------------Trends of Tone Over Time------------------    
 def plot_tone_trends(df_tone, selected_countries, start_year, end_year):
     df_tone['Year'] = df_tone['Year'].astype(int)
     df_tone = df_tone[
@@ -103,7 +92,8 @@ def plot_tone_trends(df_tone, selected_countries, start_year, end_year):
                       yaxis_title='Article Tone toward Immigrants')
 
     st.plotly_chart(fig, use_container_width=True)
-    
+
+# ------------------Rank Data------------------      
 def make_rank_df(df, value_col, country_col='Alpha3Code'):
     ranked = df[[value_col, country_col]].sort_values(by=value_col, ascending=False)
     ranked = ranked.reset_index(drop=True)
